@@ -1,3 +1,4 @@
+#pragma once
 #include <limits>
 #include <condition_variable>
 #include <vector>
@@ -10,7 +11,7 @@ namespace blockingqueue{
 
     template<typename T>
     class BlockingQueue {
-    private:
+
     public:
 
         //Defaults to infinite size (size_t::max)
