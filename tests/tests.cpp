@@ -81,3 +81,51 @@ TEST_CASE( "Multiple producers single consumer" ){
     REQUIRE( bq.size() == 0 );
 }
 
+
+TEST_CASE( "Testing that internal ref in pop is all right" ){
+
+    BlockingQueue<std::string> bq;
+    auto cmp = "Hello testing world";
+    bq.push(cmp);
+
+    REQUIRE( bq.pop() == cmp );
+
+}
+
+TEST_CASE( "Multiple producers, multiple consumers" ){
+
+    std::array<bool, 100> visited;
+    for(auto i = 0; i < visited.size(); i++){
+        visited[i] = false;
+    }
+    BlockingQueue<int> bq;
+
+    auto producer = [&](auto begin, auto iterations){
+        for(auto i = begin; (i - begin) < iterations; i++){
+           bq.push(i); 
+        }
+    };
+    auto consumer = [&](auto begin, auto iterations){
+        for(auto i = begin; (i - begin) < iterations; i++){
+            visited[bq.pop()] = true;
+        }
+    };
+    
+    std::array<std::thread, 4> consumers;
+    std::array<std::thread, 4> producers;
+
+    for(auto i = 0; i < 4; i++){
+        consumers[i] = std::thread(consumer, 25*i, 25);
+        producers[i] = std::thread(producer, 25*i, 25);
+    }
+
+    for(auto i = 0; i < 4; i++){
+        consumers[i].join();
+        producers[i].join();
+    }
+
+    for(auto i = 0; i < visited.size(); i++){
+        REQUIRE( visited[i] );
+    }
+
+}
