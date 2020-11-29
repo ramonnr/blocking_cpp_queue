@@ -4,6 +4,7 @@
 #include <vector>
 #include <mutex>
 #include <limits.h>
+#include <optional>
 
 namespace blockingqueue{
 
@@ -18,9 +19,13 @@ namespace blockingqueue{
         BlockingQueue(size_t size = st_inf) : _size_max(size){}
 
         //Pops front element, blocks until a value is available.
-        T pop(){
+        std::optional<T> pop(){
             std::unique_lock<std::mutex> lk(_m);
-            _cv.wait(lk, [this]{ return _data.size() > 0; });
+            _cv.wait(lk, [this]{return (_data.size() > 0) || _wake_blocked;});
+            if( _wake_blocked ){
+                _wake_blocked = false;
+                return {};
+            }
             auto t = _data.front();
             _data.erase(_data.begin());
             lk.unlock();
@@ -43,11 +48,24 @@ namespace blockingqueue{
             return _data.size();
         }
 
+        //Erases all elements
+        void clear(){
+            std::lock_guard<std::mutex> lk(_m);
+            _data.clear();
+        }
+
+        void wake_up_blocked(){
+            std::lock_guard<std::mutex> lk(_m);
+            _wake_blocked = true;
+            _cv.notify_one();
+        }
+
     private:
         std::vector<T> _data;
         const size_t _size_max;
         std::condition_variable _cv;
         std::mutex _m;
+        bool _wake_blocked = false;
     };
 }
 

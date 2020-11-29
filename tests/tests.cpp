@@ -3,6 +3,8 @@
 #include "../include/blocking_queue.h"
 #include <thread>
 #include <array>
+#include <future>
+
 using namespace blockingqueue;
 
 TEST_CASE( "Max size is adhered to"){
@@ -107,7 +109,7 @@ TEST_CASE( "Multiple producers, multiple consumers" ){
     };
     auto consumer = [&](auto begin, auto iterations){
         for(auto i = begin; (i - begin) < iterations; i++){
-            visited[bq.pop()] = true;
+            visited[*bq.pop()] = true;
         }
     };
     
@@ -129,3 +131,14 @@ TEST_CASE( "Multiple producers, multiple consumers" ){
     }
 
 }
+
+TEST_CASE( "Blocked thread wakes up when unblocked" ){
+
+    BlockingQueue<int> bq;
+    auto blocked = std::async( std::launch::async, [&]{bq.pop();} );
+    bq.wake_up_blocked();
+    auto status = blocked.wait_for(std::chrono::milliseconds(10));
+    REQUIRE( status == std::future_status::ready );
+
+}
+
