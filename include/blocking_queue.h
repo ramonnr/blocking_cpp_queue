@@ -32,6 +32,16 @@ namespace blockingqueue{
             return t;
         }
 
+        //Pops up to n items
+        std::vector<T> pop_range(std::size_t n){
+            std::lock_guard<std::mutex> lk(_m);
+            auto first = _data.begin();
+            auto last = _data.begin() + std::min(n, _data.size());
+            std::vector<T> cpy {first, last};
+            _data.erase(first, last);
+            return cpy;
+        }
+
         //Pushes t. Pops front element if size has reached the limit
         void push(const T& t){
             {
