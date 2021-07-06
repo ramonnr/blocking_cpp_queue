@@ -32,6 +32,15 @@ namespace blockingqueue{
             return t;
         }
 
+        //return front element if it exists
+        std::optional<T> peek(){
+            std::lock_guard<std::mutex> lk(_m);
+            if(_data.size() > 0){
+                return _data.front();
+            }
+            return {};
+        }
+
         //Pops up to n items
         std::vector<T> pop_range(std::size_t n){
             std::lock_guard<std::mutex> lk(_m);
